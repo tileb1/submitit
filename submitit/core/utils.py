@@ -65,7 +65,17 @@ class JobPaths:
 
     @property
     def submitted_pickle(self) -> Path:
-        return self._format_id(self.folder / "%j_submitted.pkl")
+        my_pickle = self.submitted_pickle_for_task
+        master_pickle = self._format_id(self.folder / "%j_0_submitted.pkl")
+
+        # Most multi task jobs only save/load from the master task.
+        if not my_pickle.exists() and master_pickle.exists():
+            return master_pickle
+        return my_pickle
+
+    @property
+    def submitted_pickle_for_task(self) -> Path:
+        return self._format_id(self.folder / "%j_%t_submitted.pkl")
 
     @property
     def result_pickle(self) -> Path:

@@ -8,10 +8,13 @@
 # import DelayedSubmission and CommandFunction to populate helpers namespace
 import time
 import typing as tp
+from typing import Tuple
 
-from .core import core
-from .core.utils import CommandFunction as CommandFunction  # noqa
-from .core.utils import DelayedSubmission as DelayedSubmission  # noqa
+from .core import core, logger
+from .core.job_environment import JobEnvironment
+from .core.utils import CommandFunction, DelayedSubmission
+
+# ,  # noqa
 
 
 class Checkpointable:
@@ -42,6 +45,12 @@ class Checkpointable:
         # The DelayedSubmission class goal is only to register and format
         # the arguments of the call "self(*args, **kwargs)" for submission to slurm
         return DelayedSubmission(self, *args, **kwargs)  # type: ignore
+
+    def should_checkpoint(self, env: JobEnvironment) -> bool:
+        rank = env.global_rank
+        if rank != 0:
+            logger.info(f"Not checkpointing nor requeuing since I am a slave (global_rank={rank}).")
+        return rank == 0
 
 
 class FunctionSequence(Checkpointable):

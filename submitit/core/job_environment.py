@@ -158,17 +158,25 @@ class SignalHandler:
         case = "timed-out" if self._timedout else "preempted"
         self._logger.warning(f"Caught signal {signum} on {socket.gethostname()}: this job is {case}.")
 
-        procid = self.env.global_rank
-        if procid != 0:
-            self._logger.info(f"Not checkpointing nor requeuing since I am a slave (procid={procid}).")
-            # do not sys.exit, because it might kill the master task
+        rank = self.env.global_rank
+        delayed = self._delayed
+        # Only checkpoint if we have been asked to or if we are on the master task.
+        # If not checkpointing, do not sys.exit. It might kill the master task.
+        should_checkpoint = getattr(delayed.function, "should_checkpoint")
+        if should_checkpoint is not None:
+            if not should_checkpoint(self.env):
+                self._logger.warning(f"Not checkpointing since `should_checkpoint` returned False.")
+                return
+        elif rank != 0:
+            self._logger.warning(
+                f"Not checkpointing nor requeuing since I am a slave (global_rank={rank}, fucntion={delayed.function}) ."
+            )
             return
 
-        delayed = self._delayed
         countdown = delayed.timeout_countdown - self._timedout
         no_requeue_reason = ""
         if hasattr(delayed.function, "checkpoint"):
-            no_requeue_reason = _checkpoint(self._delayed, self._job_paths.submitted_pickle, countdown)
+            no_requeue_reason = _checkpoint(delayed, self._job_paths.submitted_pickle_for_task, countdown)
         elif self._timedout:
             no_requeue_reason = "timed-out and not checkpointable"
         if countdown < 0:  # this is the end

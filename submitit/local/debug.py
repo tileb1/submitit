@@ -22,7 +22,14 @@ class DebugInfoWatcher(InfoWatcher):
 
 
 class DebugJobEnvironment(JobEnvironment):
-    _env = LocalJobEnvironment._env
+    _env = {
+        "job_id": "SUBMITIT_DEBUG_JOB_ID",
+        "num_tasks": "SUBMITIT_LOCAL_NTASKS",
+        "num_nodes": "SUBMITIT_LOCAL_JOB_NUM_NODES",
+        "node": "SUBMITIT_LOCAL_NODEID",
+        "global_rank": "SUBMITIT_LOCAL_GLOBALID",
+        "local_rank": "SUBMITIT_LOCAL_LOCALID",
+    }
 
     def activated(self) -> bool:
         return "SUBMITIT_DEBUG_JOB_ID" in os.environ
