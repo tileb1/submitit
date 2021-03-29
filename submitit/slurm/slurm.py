@@ -507,4 +507,3 @@ def _convert_mem(mem_gb: float) -> str:
     if mem_gb == int(mem_gb):
         return f"{int(mem_gb)}GB"
     return f"{int(mem_gb * 1024)}MB"
-
