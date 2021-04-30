@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 #
+from __future__ import annotations
 
 import itertools
 import os
@@ -36,7 +37,7 @@ class Checkpointable:
     """
 
     # pylint: disable=unused-argument
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args, **kwargs) -> "Checkpointable":
         instance = super().__new__(cls)
         assert callable(
             instance
@@ -75,7 +76,7 @@ class FunctionSequence(Checkpointable):
 
     def __init__(self, verbose: bool = False) -> None:
         self.verbose = verbose
-        self.delayed_functions: tp.List[DelayedSubmission] = []
+        self.delayed_functions: list[DelayedSubmission] = []
 
     def add(self, func: tp.Callable[..., tp.Any], *args: tp.Any, **kwargs: tp.Any) -> None:
         self.delayed_functions.append(DelayedSubmission(func, *args, **kwargs))
@@ -86,7 +87,7 @@ class FunctionSequence(Checkpointable):
     def __iter__(self) -> tp.Iterator[DelayedSubmission]:
         return iter(self.delayed_functions)
 
-    def __call__(self) -> tp.List[tp.Any]:  # pylint: disable=arguments-differ
+    def __call__(self) -> list[tp.Any]:  # pylint: disable=arguments-differ
         if self.verbose:
             done = sum(f.done() for f in self)  # those were computed before checkpoint
             print(f"Starting from {done}/{len(self.delayed_functions)}", flush=True)
@@ -97,7 +98,7 @@ class FunctionSequence(Checkpointable):
 
 def as_completed(
     jobs: tp.Sequence[core.Job[core.R]],
-    timeout: tp.Optional[tp.Union[int, float]] = None,
+    timeout: int | float | None = None,
     poll_frequency: float = 10,
 ) -> tp.Iterator[core.Job[core.R]]:
     """
@@ -123,7 +124,7 @@ def as_completed(
         The next completed job
     """
     start = time.time()
-    jobs_done: tp.Set[int] = set()
+    jobs_done: set[int] = set()
     while True:
         if timeout is not None and time.time() - start > timeout:
             raise TimeoutError

@@ -4,6 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 #
 
+from __future__ import annotations
+
 import abc
 import contextlib
 import subprocess
@@ -35,18 +37,18 @@ class InfoWatcher:
 
     def __init__(self, delay_s: int = 60) -> None:
         self._delay_s = delay_s
-        self._registered: tp.Set[str] = set()
-        self._finished: tp.Set[str] = set()
-        self._info_dict: tp.Dict[str, tp.Dict[str, str]] = {}
+        self._registered: set[str] = set()
+        self._finished: set[str] = set()
+        self._info_dict: dict[str, dict[str, str]] = {}
         self._output = b""  # for the record
         self._start_time = 0.0
         self._last_status_check = float("-inf")
         self._num_calls = 0
 
-    def read_info(self, string: tp.Union[bytes, str]) -> tp.Dict[str, tp.Dict[str, str]]:
+    def read_info(self, string: bytes | str) -> dict[str, dict[str, str]]:
         raise NotImplementedError
 
-    def _make_command(self) -> tp.Optional[tp.List[str]]:
+    def _make_command(self) -> list[str] | None:
         raise NotImplementedError
 
     def get_state(self, job_id: str, mode: str = "standard") -> str:
@@ -67,7 +69,7 @@ class InfoWatcher:
         self._info_dict = {}
         self._output = b""
 
-    def get_info(self, job_id: str, mode: str = "standard") -> tp.Dict[str, str]:
+    def get_info(self, job_id: str, mode: str = "standard") -> dict[str, str]:
         """Returns a dict containing info about the job.
         State of finished jobs are cached (use watcher.clear() to remove all cache)
 
@@ -156,7 +158,7 @@ class Job(tp.Generic[R]):
         A path to the submitted job file
     job_id: str
         the id of the cluster job
-    tasks: List[int]
+    tasks: list[int]
         The ids of the tasks associated to this job.
         If None, the job has only one task (with id = 0)
     """
@@ -165,7 +167,7 @@ class Job(tp.Generic[R]):
     _results_timeout_s = 15
     watcher = InfoWatcher()
 
-    def __init__(self, folder: tp.Union[Path, str], job_id: str, tasks: tp.Sequence[int] = (0,)) -> None:
+    def __init__(self, folder: Path | str, job_id: str, tasks: tp.Sequence[int] = (0,)) -> None:
         self._job_id = job_id
         self._tasks = tuple(tasks)
         self._sub_jobs: tp.Sequence["Job[R]"] = []
@@ -262,7 +264,7 @@ class Job(tp.Generic[R]):
         assert not self._sub_jobs, "You should use `results()` if your job has subtasks."
         return r[0]
 
-    def results(self) -> tp.List[R]:
+    def results(self) -> list[R]:
         """Waits for and outputs the result of the submitted function
 
         Returns
@@ -328,7 +330,7 @@ class Job(tp.Generic[R]):
             )
         return None
 
-    def _get_outcome_and_result(self) -> tp.Tuple[str, tp.Any]:
+    def _get_outcome_and_result(self) -> tuple[str, tp.Any]:
         """Getter for the output of the submitted function.
 
         Returns
@@ -375,7 +377,7 @@ class Job(tp.Generic[R]):
                 message.append(f"No output/error stream produced ! Check: {self.paths.stdout}")
             raise utils.UncompletedJobError("\n".join(message))
         try:
-            output: tp.Tuple[str, tp.Any] = utils.pickle_load(self.paths.result_pickle)
+            output: tuple[str, tp.Any] = utils.pickle_load(self.paths.result_pickle)
         except EOFError:
             warnings.warn(f"EOFError on file {self.paths.result_pickle}, trying again in 2s")  # will it work?
             _time.sleep(2)
@@ -438,7 +440,7 @@ class Job(tp.Generic[R]):
         """State of the job (forces an update)"""
         return self.watcher.get_state(self.job_id, mode="force")
 
-    def get_info(self) -> tp.Dict[str, str]:
+    def get_info(self) -> dict[str, str]:
         """Returns informations about the job as a dict (sacct call)"""
         return self.watcher.get_info(self.job_id, mode="force")
 
@@ -479,7 +481,7 @@ class Job(tp.Generic[R]):
         """
         if self._sub_jobs:
             stderr_ = [sub_job.stderr() for sub_job in self._sub_jobs]
-            stderr_not_none: tp.List[str] = [s for s in stderr_ if s is not None]
+            stderr_not_none: list[str] = [s for s in stderr_ if s is not None]
             if not stderr_not_none:
                 return None
             return "\n".join(stderr_not_none)
@@ -498,10 +500,10 @@ class Job(tp.Generic[R]):
             if not self.watcher.is_done(self.job_id, mode="cache"):
                 self.cancel(check=False)
 
-    def __getstate__(self) -> tp.Dict[str, tp.Any]:
+    def __getstate__(self) -> dict[str, tp.Any]:
         return self.__dict__  # for pickling (see __setstate__)
 
-    def __setstate__(self, state: tp.Dict[str, tp.Any]) -> None:
+    def __setstate__(self, state: dict[str, tp.Any]) -> None:
         """Make sure jobs are registered when loaded from a pickle"""
         self.__dict__.update(state)
         self._register_in_watcher()
@@ -541,11 +543,11 @@ class Executor(abc.ABC):
 
     job_class: tp.Type[Job[tp.Any]] = Job
 
-    def __init__(self, folder: tp.Union[str, Path], parameters: tp.Optional[tp.Dict[str, tp.Any]] = None):
+    def __init__(self, folder: str | Path, parameters: dict[str, tp.Any] | None = None):
         self.folder = Path(folder).expanduser().absolute()
         self.parameters = {} if parameters is None else parameters
         # storage for the batch context manager, for batch submissions:
-        self._delayed_batch: tp.Optional[tp.List[tp.Tuple[Job[tp.Any], utils.DelayedSubmission]]] = None
+        self._delayed_batch: tp.Optional[list[tuple[Job[tp.Any], utils.DelayedSubmission]]] = None
 
     @classmethod
     def name(cls) -> str:
@@ -598,11 +600,11 @@ class Executor(abc.ABC):
 
     @abc.abstractmethod
     def _internal_process_submissions(
-        self, delayed_submissions: tp.List[utils.DelayedSubmission]
-    ) -> tp.List[Job[tp.Any]]:
+        self, delayed_submissions: list[utils.DelayedSubmission]
+    ) -> list[Job[tp.Any]]:
         ...
 
-    def map_array(self, fn: tp.Callable[..., R], *iterable: tp.Iterable[tp.Any]) -> tp.List[Job[R]]:
+    def map_array(self, fn: tp.Callable[..., R], *iterable: tp.Iterable[tp.Any]) -> list[Job[R]]:
         """A distributed equivalent of the map() built-in function
 
         Parameters
@@ -614,7 +616,7 @@ class Executor(abc.ABC):
 
         Returns
         -------
-        List[Job]
+        list[Job]
             A list of Job instances.
 
         Example
@@ -630,7 +632,7 @@ class Executor(abc.ABC):
             return []
         return self._internal_process_submissions(submissions)
 
-    def submit_array(self, fns: tp.Sequence[tp.Callable[[], R]]) -> tp.List[Job[R]]:
+    def submit_array(self, fns: tp.Sequence[tp.Callable[[], R]]) -> list[Job[R]]:
         """Submit a list of job. This is useful when submiting different Checkpointable functions.
         Be mindful that all those functions will be run with the same requirements
         (cpus, gpus, timeout, ...). So try to make group of similar function calls.
@@ -644,7 +646,7 @@ class Executor(abc.ABC):
 
         Returns
         -------
-        List[Job]
+        list[Job]
             A list of Job instances.
 
         Example
@@ -674,17 +676,17 @@ class Executor(abc.ABC):
         return None
 
     @classmethod
-    def _valid_parameters(cls) -> tp.Set[str]:
+    def _valid_parameters(cls) -> set[str]:
         """Parameters that can be set through update_parameters"""
         return set()
 
-    def _convert_parameters(self, params: tp.Dict[str, tp.Any]) -> tp.Dict[str, tp.Any]:
+    def _convert_parameters(self, params: dict[str, tp.Any]) -> dict[str, tp.Any]:
         """Convert generic parameters to their specific equivalent.
         This has to be called **before** calling `update_parameters`.
 
         The default implementation only renames the key using `_equivalence_dict`.
         """
-        eq_dict = tp.cast(tp.Optional[tp.Dict[str, str]], self._equivalence_dict())
+        eq_dict = tp.cast(tp.Optional[dict[str, str]], self._equivalence_dict())
         if eq_dict is None:
             return params
         return {eq_dict.get(k, k): v for k, v in params.items()}
@@ -714,15 +716,15 @@ class PicklingExecutor(Executor):
         folder for storing job submission/output and logs.
     """
 
-    def __init__(self, folder: tp.Union[Path, str], max_num_timeout: int = 3) -> None:
+    def __init__(self, folder: Path | str, max_num_timeout: int = 3) -> None:
         super().__init__(folder)
         self.max_num_timeout = max_num_timeout
         self._throttling = 0.2
         self._last_job_submitted = 0.0
 
     def _internal_process_submissions(
-        self, delayed_submissions: tp.List[utils.DelayedSubmission]
-    ) -> tp.List[Job[tp.Any]]:
+        self, delayed_submissions: list[utils.DelayedSubmission]
+    ) -> list[Job[tp.Any]]:
         """Submits a task to the cluster.
 
         Parameters
@@ -818,13 +820,13 @@ class PicklingExecutor(Executor):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _make_submission_command(self, submission_file_path: Path) -> tp.List[str]:
+    def _make_submission_command(self, submission_file_path: Path) -> list[str]:
         """Create the submission command."""
         raise NotImplementedError
 
     @staticmethod
     @abc.abstractmethod
-    def _get_job_id_from_submission_command(string: tp.Union[bytes, str]) -> str:
+    def _get_job_id_from_submission_command(string: bytes | str) -> str:
         """Recover the job id from the output of the submission command."""
         raise NotImplementedError
 

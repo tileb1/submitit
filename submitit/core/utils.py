@@ -4,6 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 #
 
+from __future__ import annotations
+
 import contextlib
 import io
 import itertools
@@ -16,7 +18,7 @@ import subprocess
 import sys
 import tarfile
 from pathlib import Path
-from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
+from typing import IO, Any, Callable, Iterator, Optional, Type
 
 import cloudpickle
 
@@ -47,7 +49,7 @@ class JobPaths:
     """Creates paths related to the slurm job and its submission"""
 
     def __init__(
-        self, folder: Union[Path, str], job_id: Optional[str] = None, task_id: Optional[int] = None
+        self, folder: str | Path, job_id: Optional[str] = None, task_id: Optional[int] = None
     ) -> None:
         self._folder = Path(folder).expanduser().absolute()
         self.job_id = job_id
@@ -77,18 +79,18 @@ class JobPaths:
     def stdout(self) -> Path:
         return self._format_id(self.folder / "%j_%t_log.out")
 
-    def _format_id(self, path: Union[Path, str]) -> Path:
+    def _format_id(self, path: str | Path) -> Path:
         """Replace id tag by actual id if available"""
         if self.job_id is None:
             return Path(path)
         return Path(str(path).replace("%j", str(self.job_id)).replace("%t", str(self.task_id)))
 
-    def move_temporary_file(self, tmp_path: Union[Path, str], name: str) -> None:
+    def move_temporary_file(self, tmp_path: str | Path, name: str) -> None:
         self.folder.mkdir(parents=True, exist_ok=True)
         Path(tmp_path).rename(getattr(self, name))
 
     @staticmethod
-    def get_first_id_independent_folder(folder: Union[Path, str]) -> Path:
+    def get_first_id_independent_folder(folder: str | Path) -> Path:
         """Returns the closest folder which is id independent"""
         parts = Path(folder).expanduser().absolute().parts
         indep_parts = itertools.takewhile(lambda x: not any(tag in x for tag in ["%j", "%t"]), parts)
@@ -126,7 +128,7 @@ class DelayedSubmission:
     def done(self) -> bool:
         return self._done
 
-    def dump(self, filepath: Union[str, Path]) -> None:
+    def dump(self, filepath: str | Path) -> None:
         cloudpickle_dump(self, filepath)
 
     def set_timeout(self, timeout_min: int, max_num_timeout: int) -> None:
@@ -134,7 +136,7 @@ class DelayedSubmission:
         self._timeout_countdown = max_num_timeout
 
     @classmethod
-    def load(cls: Type["DelayedSubmission"], filepath: Union[str, Path]) -> "DelayedSubmission":
+    def load(cls: Type["DelayedSubmission"], filepath: str | Path) -> "DelayedSubmission":
         obj = pickle_load(filepath)
         # following assertion is relaxed compared to isinstance, to allow flexibility
         # (Eg: copying this class in a project to be able to have checkpointable jobs without adding submitit as dependency)
@@ -151,7 +153,7 @@ class DelayedSubmission:
 
 
 @contextlib.contextmanager
-def temporary_save_path(filepath: Union[Path, str]) -> Iterator[Path]:
+def temporary_save_path(filepath: str | Path) -> Iterator[Path]:
     """Yields a path where to save a file and moves it
     afterward to the provided location (and replaces any
     existing file)
@@ -173,7 +175,7 @@ def temporary_save_path(filepath: Union[Path, str]) -> Iterator[Path]:
     os.rename(tmppath, filepath)
 
 
-def archive_dev_folders(folders: List[Union[str, Path]], outfile: Optional[Union[str, Path]] = None) -> Path:
+def archive_dev_folders(folders: list[str | Path], outfile: Optional[str | Path] = None) -> Path:
     """Creates a tar.gz file with all provided folders"""
     assert isinstance(folders, (list, tuple)), "Only lists and tuples of folders are allowed"
     if outfile is None:
@@ -186,7 +188,7 @@ def archive_dev_folders(folders: List[Union[str, Path]], outfile: Optional[Union
     return outfile
 
 
-def copy_par_file(par_file: Union[str, Path], folder: Union[str, Path]) -> Path:
+def copy_par_file(par_file: str | Path, folder: str | Path) -> Path:
     """Copy the par (or xar) file in the folder
 
     Parameter
@@ -221,13 +223,13 @@ def sanitize(s: str, only_alphanum: bool = True, in_quotes: bool = True) -> str:
     return s
 
 
-def pickle_load(filename: Union[str, Path]) -> Any:
+def pickle_load(filename: str | Path) -> Any:
     # this is used by cloudpickle as well
     with open(filename, "rb") as ifile:
         return pickle.load(ifile)
 
 
-def cloudpickle_dump(obj: Any, filename: Union[str, Path]) -> None:
+def cloudpickle_dump(obj: Any, filename: str | Path) -> None:
     with open(filename, "wb") as ofile:
         cloudpickle.dump(obj, ofile, pickle.HIGHEST_PROTOCOL)
 
@@ -235,7 +237,7 @@ def cloudpickle_dump(obj: Any, filename: Union[str, Path]) -> None:
 # pylint: disable=too-many-locals
 def copy_process_streams(
     process: subprocess.Popen, stdout: io.StringIO, stderr: io.StringIO, verbose: bool = False
-):
+) -> None:
     """
     Reads the given process stdout/stderr and write them to StringIO objects.
     Make sure that there is no deadlock because of pipe congestion.
@@ -249,7 +251,7 @@ def copy_process_streams(
         return stream
 
     p_stdout, p_stderr = raw(process.stdout), raw(process.stderr)
-    stream_by_fd: Dict[int, Tuple[IO[bytes], io.StringIO, IO[str]]] = {
+    stream_by_fd: dict[int, tuple[IO[bytes], io.StringIO, IO[str]]] = {
         p_stdout.fileno(): (p_stdout, stdout, sys.stdout),
         p_stderr.fileno(): (p_stderr, stderr, sys.stderr),
     }
@@ -297,10 +299,10 @@ class CommandFunction:
 
     def __init__(
         self,
-        command: List[str],
+        command: list[str],
         verbose: bool = True,
-        cwd: Optional[Union[str, Path]] = None,
-        env: Optional[Dict[str, str]] = None,
+        cwd: Optional[str | Path] = None,
+        env: Optional[dict[str, str]] = None,
     ) -> None:
         if not isinstance(command, list):
             raise TypeError("The command must be provided as a list")

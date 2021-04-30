@@ -3,10 +3,10 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 #
+from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import List
 
 
 class _MarkdownLink:
@@ -40,11 +40,11 @@ def _get_root() -> Path:
     return root
 
 
-def _get_markdown_files(root: Path) -> List[Path]:
+def _get_markdown_files(root: Path) -> list[Path]:
     return [md for pattern in ("*.md", "submitit/**/*.md", "docs/**/*.md") for md in root.glob(pattern)]
 
 
-def _get_all_markdown_links(root: Path, files: List[Path]) -> List[_MarkdownLink]:
+def _get_all_markdown_links(root: Path, files: list[Path]) -> list[_MarkdownLink]:
     """Returns a list of all existing markdown links"""
     pattern = re.compile(r"\[(?P<string>.+?)\]\((?P<link>\S+?)\)")
     links = []

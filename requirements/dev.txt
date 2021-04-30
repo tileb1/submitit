@@ -9,7 +9,7 @@ isort==5.5.3
 pre-commit>=1.15.2
 
 # Linters
-mypy>=0.782
+mypy>=0.812
 pylint>=2.8.0
 
 # Install

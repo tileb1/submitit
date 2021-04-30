@@ -4,6 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 #
 
+from __future__ import annotations
+
 # pylint: disable=redefined-outer-name
 import contextlib
 import pickle
@@ -11,7 +13,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Sequence, Union
+from typing import Any, Iterator, Sequence
 from unittest.mock import patch
 
 import pytest
@@ -26,7 +28,7 @@ class MockedSubprocess:
     SACCT_JOB = "{j}|{state}\n{j}.ext+|{state}\n{j}.0|{state}"
 
     def __init__(self, known_cmds: Sequence[str] = None) -> None:
-        self.job_sacct: Dict[str, str] = {}
+        self.job_sacct: dict[str, str] = {}
         self.last_job: str = ""
         self._subprocess_check_output = subprocess.check_output
         self.known_cmds = known_cmds or []
@@ -75,7 +77,7 @@ class MockedSubprocess:
             lines = "\n".join(self.SACCT_JOB.format(j=f"{job_id}_{i}", state=state) for i in range(array))
         return "\n".join((self.SACCT_HEADER, lines))
 
-    def which(self, name: str) -> Optional[str]:
+    def which(self, name: str) -> str | None:
         return "here" if name in self.known_cmds else None
 
     def mock_cmd_fn(self, *args, **_):
@@ -128,14 +130,14 @@ class FakeExecutor(core.PicklingExecutor):
         """
         return command + "2"  # this makes "echo 12"
 
-    def _make_submission_command(self, submission_file_path: Path) -> List[str]:
+    def _make_submission_command(self, submission_file_path: Path) -> list[str]:
         """Create the submission command."""
         with submission_file_path.open("r") as f:
             text: str = f.read()
         return text.split()  # this makes ["echo", "12"]
 
     @staticmethod
-    def _get_job_id_from_submission_command(string: Union[bytes, str]) -> str:
+    def _get_job_id_from_submission_command(string: bytes | str) -> str:
         return string if isinstance(string, str) else string.decode()  # this returns "12"
 
 

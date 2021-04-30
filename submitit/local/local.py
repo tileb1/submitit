@@ -4,6 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 #
 
+from __future__ import annotations
+
 import os
 import shlex
 import signal
@@ -11,7 +13,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import IO, Any, Dict, List, Optional, Sequence, Union
+from typing import IO, Any, Optional, Sequence
 
 from ..core import core, job_environment, logger, utils
 from ..core.core import R
@@ -25,7 +27,7 @@ LOCAL_REQUEUE_RETURN_CODE = 144
 class LocalJob(core.Job[R]):
     def __init__(
         self,
-        folder: Union[Path, str],
+        folder: Path | str,
         job_id: str,
         tasks: Sequence[int] = (0,),
         process: Optional["subprocess.Popen['bytes']"] = None,
@@ -52,7 +54,7 @@ class LocalJob(core.Job[R]):
         except Exception:
             return "UNKNOWN"
 
-    def get_info(self) -> Dict[str, str]:
+    def get_info(self) -> dict[str, str]:
         """Returns information about the job as a dict."""
         assert self._process is not None
         poll = self._process.poll()
@@ -120,7 +122,7 @@ class LocalExecutor(core.PicklingExecutor):
 
     job_class = LocalJob
 
-    def __init__(self, folder: Union[str, Path], max_num_timeout: int = 3) -> None:
+    def __init__(self, folder: Path | str, max_num_timeout: int = 3) -> None:
         super().__init__(folder, max_num_timeout=max_num_timeout)
         # preliminary check
         indep_folder = utils.JobPaths.get_first_id_independent_folder(self.folder)
@@ -175,11 +177,11 @@ class LocalExecutor(core.PicklingExecutor):
         return ""
 
     @staticmethod
-    def _get_job_id_from_submission_command(string: Union[bytes, str]) -> str:
+    def _get_job_id_from_submission_command(string: bytes | str) -> str:
         # Not used, but need an implementation
         return "0"
 
-    def _make_submission_command(self, submission_file_path: Path) -> List[str]:
+    def _make_submission_command(self, submission_file_path: Path) -> list[str]:
         # Not used, but need an implementation
         return []
 
@@ -230,9 +232,9 @@ class Controller:
         self.timeout_s = int(os.environ["SUBMITIT_LOCAL_TIMEOUT_S"])
         self.signal_delay_s = int(os.environ["SUBMITIT_LOCAL_SIGNAL_DELAY_S"])
         self.stderr_to_stdout = bool(os.environ["SUBMITIT_STDERR_TO_STDOUT"])
-        self.tasks: List[subprocess.Popen] = []  # type: ignore
-        self.stdouts: List[IO[Any]] = []
-        self.stderrs: List[IO[Any]] = []
+        self.tasks: list[subprocess.Popen] = []  # type: ignore
+        self.stdouts: list[IO[Any]] = []
+        self.stderrs: list[IO[Any]] = []
         self.pid = str(os.getpid())
         self.folder = Path(folder)
         signal.signal(signal.SIGTERM, self._forward_signal)

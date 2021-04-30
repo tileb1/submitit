@@ -4,9 +4,11 @@
 # LICENSE file in the root directory of this source tree.
 #
 
+from __future__ import annotations
+
 import functools
 import os
-from typing import TYPE_CHECKING, List, Mapping, Tuple, Type
+from typing import TYPE_CHECKING
 
 from ..core import logger
 
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @functools.lru_cache()
-def _get_plugins() -> Tuple[List[Type["Executor"]], List["JobEnvironment"]]:
+def _get_plugins() -> tuple[list[type["Executor"]], list["JobEnvironment"]]:
     # pylint: disable=cyclic-import,import-outside-toplevel
     # Load dynamically to avoid import cycle
     # pkg_resources goes through all modules on import.
@@ -28,7 +30,7 @@ def _get_plugins() -> Tuple[List[Type["Executor"]], List["JobEnvironment"]]:
 
     # TODO: use sys.modules.keys() and importlib.resources to find the files
     # We load both kind of entry points at the same time because we have to go through all module files anyway.
-    executors: List[Type["Executor"]] = [slurm.SlurmExecutor, local.LocalExecutor, debug.DebugExecutor]
+    executors: list[type["Executor"]] = [slurm.SlurmExecutor, local.LocalExecutor, debug.DebugExecutor]
     job_envs = [slurm.SlurmJobEnvironment(), local.LocalJobEnvironment(), debug.DebugJobEnvironment()]
     for entry_point in pkg_resources.iter_entry_points("submitit"):
         if entry_point.name not in ("executor", "job_environment"):
@@ -60,7 +62,7 @@ def _get_plugins() -> Tuple[List[Type["Executor"]], List["JobEnvironment"]]:
 
 
 @functools.lru_cache()
-def get_executors() -> Mapping[str, Type["Executor"]]:
+def get_executors() -> dict[str, type["Executor"]]:
     # TODO: check collisions between executor names
     return {ex.name(): ex for ex in _get_plugins()[0]}
 
@@ -84,5 +86,5 @@ def get_job_environment() -> "JobEnvironment":
 
 
 @functools.lru_cache()
-def get_job_environments() -> Mapping[str, "JobEnvironment"]:
+def get_job_environments() -> dict[str, "JobEnvironment"]:
     return {env.name(): env for env in _get_plugins()[1]}
