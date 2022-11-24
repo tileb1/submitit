@@ -501,6 +501,13 @@ def _make_sbatch_string(
         srun_args = []
 
     srun_cmd = _shlex_join(["srun", "--unbuffered", "--output", stdout, *stderr_flags, *srun_args])
+    # TODO: make this cleaner
+    lines_location_lumi = "/project/project_465000165/aws-ofi-submitit_lines.sh"
+    if os.path.exists(lines_location_lumi):
+        with open(lines_location_lumi, 'r') as f:
+            for l_ in f.readlines():
+                lines.append(l_.strip('\n'))
+    # TODO: make this cleaner
     lines += [
         "",
         "# command",
