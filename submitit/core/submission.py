@@ -39,10 +39,11 @@ def process_job(folder: Union[Path, str]) -> None:
     logger = get_logger()
     logger.info(f"Starting with {env}")
     logger.info(f"Loading pickle: {paths.submitted_pickle}")
-    wait_time = 60
+    wait_time = 120
     for _ in range(wait_time):
         if not paths.submitted_pickle.exists():
-            time.sleep(1)
+            if _ % 10 == 0:
+                print('Waited {} seconds'.format(_))
     if not paths.submitted_pickle.exists():
         raise RuntimeError(
             f"Waited for {wait_time} seconds but could not find submitted jobs in path:\n{paths.submitted_pickle}"
