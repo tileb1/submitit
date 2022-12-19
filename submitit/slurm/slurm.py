@@ -21,9 +21,6 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from ..core import core, job_environment, logger, utils
 
 
-PATH_ADD_LINES = "/project/project_465000165/aws-ofi-submitit_lines.sh"
-
-
 def read_job_id(job_id: str) -> tp.List[Tuple[str, ...]]:
     """Reads formated job id and returns a tuple with format:
     (main_id, [array_index, [final_array_index])
@@ -249,8 +246,12 @@ class SlurmExecutor(core.PicklingExecutor):
     def __init__(self, folder: Union[Path, str], max_num_timeout: int = 3, python: str = None) -> None:
         super().__init__(folder, max_num_timeout)
         self.python = python
+        self.path_lines = ""
         if not self.affinity() > 0:
             raise RuntimeError('Could not detect "srun", are you indeed on a slurm cluster?')
+
+    def update_path_lines(self, lines='/project/project_465000330/aws-ofi-submitit_lines.sh'):
+        self.path_lines = lines
 
     @classmethod
     def _equivalence_dict(cls) -> core.EquivalenceDict:
