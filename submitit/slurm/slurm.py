@@ -246,7 +246,7 @@ class SlurmExecutor(core.PicklingExecutor):
     def __init__(self, folder: Union[Path, str], max_num_timeout: int = 3, python: str = None) -> None:
         super().__init__(folder, max_num_timeout)
         self.python = python
-        self.path_lines = "/tmp/_submitit_lines_"
+        self.update_path_lines()
         if not self.affinity() > 0:
             raise RuntimeError('Could not detect "srun", are you indeed on a slurm cluster?')
 
