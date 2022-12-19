@@ -246,12 +246,13 @@ class SlurmExecutor(core.PicklingExecutor):
     def __init__(self, folder: Union[Path, str], max_num_timeout: int = 3, python: str = None) -> None:
         super().__init__(folder, max_num_timeout)
         self.python = python
-        self.path_lines = ""
+        self.path_lines = "/tmp/_submitit_lines_"
         if not self.affinity() > 0:
             raise RuntimeError('Could not detect "srun", are you indeed on a slurm cluster?')
 
     def update_path_lines(self, lines='/project/project_465000330/aws-ofi-submitit_lines.sh'):
-        self.path_lines = lines
+        print('Updating path lines to {}'.format(lines))
+        shutil.copy(lines, "/tmp/_submitit_lines_")
 
     @classmethod
     def _equivalence_dict(cls) -> core.EquivalenceDict:
@@ -506,7 +507,7 @@ def _make_sbatch_string(
 
     srun_cmd = _shlex_join(["srun", "--unbuffered", "--output", stdout, *stderr_flags, *srun_args])
     # TODO: make this cleaner
-    lines_location_lumi = PATH_ADD_LINES
+    lines_location_lumi = "/tmp/_submitit_lines_"
     print('Location {} does exist?: {}'.format(lines_location_lumi, os.path.exists(lines_location_lumi)))
     if os.path.exists(lines_location_lumi):
         with open(lines_location_lumi, 'r') as f_:
