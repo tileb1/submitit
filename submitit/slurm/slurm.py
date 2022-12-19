@@ -21,6 +21,9 @@ from typing import Any, Dict, List, Optional, Set, Tuple, Union
 from ..core import core, job_environment, logger, utils
 
 
+PATH_ADD_LINES = "/project/project_465000165/aws-ofi-submitit_lines.sh"
+
+
 def read_job_id(job_id: str) -> tp.List[Tuple[str, ...]]:
     """Reads formated job id and returns a tuple with format:
     (main_id, [array_index, [final_array_index])
@@ -502,7 +505,7 @@ def _make_sbatch_string(
 
     srun_cmd = _shlex_join(["srun", "--unbuffered", "--output", stdout, *stderr_flags, *srun_args])
     # TODO: make this cleaner
-    lines_location_lumi = "/project/project_465000165/aws-ofi-submitit_lines.sh"
+    lines_location_lumi = PATH_ADD_LINES
     print('Location {} does exist?: {}'.format(lines_location_lumi, os.path.exists(lines_location_lumi)))
     if os.path.exists(lines_location_lumi):
         with open(lines_location_lumi, 'r') as f_:

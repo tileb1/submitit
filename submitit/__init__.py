@@ -17,5 +17,6 @@ from .local.local import LocalExecutor as LocalExecutor
 from .local.local import LocalJob as LocalJob
 from .slurm.slurm import SlurmExecutor as SlurmExecutor
 from .slurm.slurm import SlurmJob as SlurmJob
+from .slurm.slurm import PATH_ADD_LINES
 
 __version__ = "1.4.5"
