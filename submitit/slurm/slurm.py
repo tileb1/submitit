@@ -243,7 +243,7 @@ class SlurmExecutor(core.PicklingExecutor):
 
     job_class = SlurmJob
 
-    def __init__(self, folder: Union[Path, str], max_num_timeout: int = 3, python: str = None, path_lines="") -> None:
+    def __init__(self, folder: Union[Path, str], max_num_timeout: int = 3, python: str = None, path_lines: str = None) -> None:
         super().__init__(folder, max_num_timeout)
         self.python = python
         self.update_path_lines(lines=path_lines)
