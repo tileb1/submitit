@@ -44,8 +44,6 @@ def process_job(folder: Union[Path, str]) -> None:
         if not paths.submitted_pickle.exists():
             if _ % 10 == 0:
                 print('Waited {} seconds'.format(_))
-                print(os.listdir('/project/project_465000165'))
-                print(os.listdir('/scratch/project_465000165'))
             time.sleep(1)
     if not paths.submitted_pickle.exists():
         raise RuntimeError(
