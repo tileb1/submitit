@@ -247,12 +247,12 @@ class SlurmExecutor(core.PicklingExecutor):
         super().__init__(folder, max_num_timeout)
         self.python = python
         if path_lines is None:
-            path_lines = '/project/project_465000330/aws-ofi-submitit_lines.sh'
+            path_lines = '/project/project_465000727/aws-ofi-submitit_lines.sh'
         self.update_path_lines(lines=path_lines)
         if not self.affinity() > 0:
             raise RuntimeError('Could not detect "srun", are you indeed on a slurm cluster?')
 
-    def update_path_lines(self, lines='/project/project_465000330/aws-ofi-submitit_lines.sh'):
+    def update_path_lines(self, lines='/project/project_465000727/aws-ofi-submitit_lines.sh'):
         print('Updating path lines to {}'.format(lines))
         shutil.copy(lines, "/tmp/_submitit_lines_{}".format(os.getlogin()))
 
